@@ -2,16 +2,16 @@ use num::complex::ComplexFloat;
 use num::Complex;
 
 fn main() {
-    let mandelbrot = MandelbrotPlane::new(-2.0, 2.0, -1.2, 1.2, 500, 500, 255);
+    let mandelbrot = MandelbrotPlane::new(-2.0, 1.5, -1.2, 1.2, 700, 480, 255);
     let points = mandelbrot.points_with_iterations();
-    let mut image = image::RgbImage::new(500, 500);
-    println!("{points:?}");
+    let mut image = image::RgbImage::new(700 ,480);
+    //println!("{points:?}");
     for point in points {
         image.put_pixel(
-            (point.0.point.re()
+            ((point.0.point.re() - mandelbrot.re_min)
                 / ((mandelbrot.re_max - mandelbrot.re_min) / (mandelbrot.width as f64)))
                 .round() as u32,
-            (point.0.point.im()
+            ((point.0.point.im() - mandelbrot.im_min)
                 / ((mandelbrot.im_max - mandelbrot.im_min) / (mandelbrot.height as f64)))
                 .round() as u32,
             image::Rgb([
@@ -19,7 +19,16 @@ fn main() {
                 255 - point.1 as u8,
                 255 - point.1 as u8,
             ]),
+
         );
+
+       // println!("{},{}",mandelbrot.im_min, mandelbrot.im_max);
+       //  println!("{},{}",((point.0.point.re() - mandelbrot.re_min)
+       //      / ((mandelbrot.re_max - mandelbrot.re_min) / (mandelbrot.width as f64)))
+       //      .round() as u32,
+       //           ((point.0.point.im() - mandelbrot.im_min)
+       //               / ((mandelbrot.im_max - mandelbrot.im_min) / (mandelbrot.height as f64)))
+       //               .round() as u32);
     }
 
     image.save("output.png").unwrap();
@@ -83,22 +92,6 @@ impl MandelbrotPlane {
         }
     }
 
-    pub fn points(self) -> Vec<MandelbrotPoint> {
-        let mut points = Vec::new();
-        for real in 0..self.width {
-            for imaginary in 0..self.height {
-                points.push(MandelbrotPoint::new(
-                    Complex::new(
-                        (self.re_max - self.re_min) / (self.width as f64) * real as f64,
-                        (self.im_max - self.im_min) / (self.height as f64) * imaginary as f64,
-                    ),
-                    self.max_iterations,
-                ));
-            }
-        }
-        points
-    }
-
     pub fn points_with_iterations(self) -> Vec<(MandelbrotPoint, u64)> {
         let mut points = Vec::new();
         let mut point;
@@ -108,8 +101,7 @@ impl MandelbrotPlane {
                     Complex::new(
                         (((self.re_max - self.re_min) / (self.width as f64)) * real as f64)
                             + self.re_min,
-                        (((self.im_max - self.im_min) / (self.height as f64)) * imaginary as f64),
-                    ) + self.im_min,
+                        (((self.im_max - self.im_min) / (self.height as f64)) * imaginary as f64) + self.im_min),
                     self.max_iterations,
                 );
                 points.push((point, point.iterations()))
