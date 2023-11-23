@@ -2,9 +2,9 @@ use num::complex::ComplexFloat;
 use num::Complex;
 
 fn main() {
-    let mandelbrot = MandelbrotPlane::new(-2.0, 1.5, -1.2, 1.2, 700, 480, 255);
-    let points = mandelbrot.points_with_iterations();
-    let mut image = image::RgbImage::new(700 ,480);
+    let mandelbrot = MandelbrotPlane::new(0.25, 0.41, -0.06, 0.05, 1920, 1080, 1000);
+    let points = mandelbrot.points_with_colours();
+    let mut image = image::RgbImage::new(1920 ,1080);
     //println!("{points:?}");
     for point in points {
         image.put_pixel(
@@ -14,11 +14,8 @@ fn main() {
             ((point.0.point.im() - mandelbrot.im_min)
                 / ((mandelbrot.im_max - mandelbrot.im_min) / (mandelbrot.height as f64)))
                 .round() as u32,
-            image::Rgb([
-                255 - point.1 as u8,
-                255 - point.1 as u8,
-                255 - point.1 as u8,
-            ]),
+            image::Rgb(
+            point.1.into()),
 
         );
 
@@ -108,5 +105,26 @@ impl MandelbrotPlane {
             }
         }
         points
+    }
+    pub fn points_with_colours(self) -> Vec<(MandelbrotPoint, (u8, u8, u8))> {
+        let points = self.points_with_iterations();
+        let mut points_with_colours: Vec<(MandelbrotPoint, (u8, u8, u8))> = vec![];
+        let iterations = points.iter().map(|x| x.1);
+        let total_iterations_before_max: u64 = iterations.filter(|x| *x!=self.max_iterations).sum();
+        let mut max_iterations_per_pixel: Vec<u64> = vec![0; self.max_iterations as usize + 1];
+        for (_, iterations) in &points {
+            max_iterations_per_pixel[*iterations as usize] += 1
+        }
+        let mut hue;
+        for point in &points {
+            hue = 0.0;
+            if point.1 != self.max_iterations {
+            for i in 0..point.1 {
+                hue += max_iterations_per_pixel[i as usize] as f64 / total_iterations_before_max as f64
+            }
+        }
+            points_with_colours.push((point.0, (((hue*100.0%1.0)*255.0) as u8, ((hue*5.0%1.0)*255.0) as u8, ((hue*10.0%1.0)*255.0) as u8)))
+        }
+        points_with_colours
     }
 }
