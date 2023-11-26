@@ -1,12 +1,10 @@
-use crate::backend;
 use crate::backend::MandelbrotPlane;
 use num::complex::ComplexFloat;
-use rayon::prelude::*;
 
 pub fn mandelbrot_xy_coordinates_with_colours(
     set: MandelbrotPlane,
 ) -> Vec<((u64, u64), (u8, u8, u8))> {
-    let mut points = set.points_with_colours();
+    let points = set.points_with_colours();
     let points = points
         .iter()
         .map(|point| {
@@ -30,7 +28,7 @@ pub fn mandelbrot_xy_coordinates_with_colours(
 pub fn mandelbrot_xy_coordinates_with_colours_parallel(
     set: MandelbrotPlane,
 ) -> Vec<((u64, u64), (u8, u8, u8))> {
-    let mut points = set.points_with_colours_parallel();
+    let points = set.points_with_colours_parallel();
     let points = points
         .iter()
         .map(|point| {
@@ -75,7 +73,6 @@ pub fn mandelbrot_xy_coords_from_params(
     ))
 }
 
-// TODO! sort out histogram colouring from parallel threads
 pub fn mandelbrot_from_params_parallel(
     centre: num::Complex<f64>,
     resolution: f64,
