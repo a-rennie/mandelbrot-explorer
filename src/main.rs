@@ -1,12 +1,13 @@
 mod backend;
+mod colours;
 mod renderer;
 
 use crate::renderer::mandelbrot_from_params_parallel;
 use iced::event::Status;
 use iced::mouse::Cursor;
-use iced::widget::canvas::{Event, Program};
-use iced::widget::{canvas, column, row, slider, text, button};
-use iced::{Color, Element, Length, Point, Rectangle, Sandbox, Settings, Size};
+use iced::widget::canvas::Event;
+use iced::widget::{button, canvas, column, row, slider, text};
+use iced::{Element, Length, Point, Rectangle, Sandbox, Settings, Size};
 use num::complex::ComplexFloat;
 use num::Complex;
 
@@ -63,7 +64,7 @@ enum Message {
     PointClicked(Point),
     IterationSet(u32),
     Refresh,
-    RenderImage
+    RenderImage,
 }
 struct MandelbrotExplorer {
     set: MandelbrotSet,
@@ -95,12 +96,22 @@ impl Sandbox for MandelbrotExplorer {
             Message::IterationSet(num) => self.set.max_iterations = num as u64,
             Message::Refresh => self.set.cache.clear(),
             Message::RenderImage => {
-                let points = mandelbrot_from_params_parallel(self.set.centre, self.set.resolution/8.0, self.set.max_iterations, 4000, 4000);
-                let mut image = image::RgbImage::new(4000,4000);
+                let points = mandelbrot_from_params_parallel(
+                    self.set.centre,
+                    self.set.resolution / 8.0,
+                    self.set.max_iterations,
+                    4000,
+                    4000,
+                );
+                let mut image = image::RgbImage::new(4000, 4000);
                 for point in points {
-                    image.put_pixel(point.0.0 as u32, point.0.1 as u32, image::Rgb(point.1.into()))
+                    image.put_pixel(
+                        point.0 .0 as u32,
+                        point.0 .1 as u32,
+                        image::Rgb(point.1.into()),
+                    )
                 }
-                image.save("output.png");
+                let _ = image.save("output.png");
             }
         }
     }
@@ -119,8 +130,16 @@ impl Sandbox for MandelbrotExplorer {
             ]
             .padding(10)
             .spacing(20),
-            text(format!("Centre: {} + {}i, Zoom: {}", self.set.centre.re(), self.set.centre.im(), 1.0/self.set.resolution)),
-            row![button(text("Refresh Image")).on_press(Message::Refresh), button(text("Render 4000x4000 image")).on_press(Message::RenderImage)]
+            text(format!(
+                "Centre: {} + {}i, Zoom: {}",
+                self.set.centre.re(),
+                self.set.centre.im(),
+                1.0 / self.set.resolution
+            )),
+            row![
+                button(text("Refresh Image")).on_press(Message::Refresh),
+                button(text("Render 4000x4000 image")).on_press(Message::RenderImage)
+            ]
         ]
         .width(Length::Fill)
         .align_items(iced::Alignment::Center)

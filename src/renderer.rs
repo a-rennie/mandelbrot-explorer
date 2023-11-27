@@ -1,6 +1,7 @@
 use crate::backend::MandelbrotPlane;
 use num::complex::ComplexFloat;
 
+// plot all points from a MandelbrotPlane to xy coordinates on an image and rgb colouring
 pub fn mandelbrot_xy_coordinates_with_colours(
     set: MandelbrotPlane,
 ) -> Vec<((u64, u64), (u8, u8, u8))> {
@@ -25,6 +26,7 @@ pub fn mandelbrot_xy_coordinates_with_colours(
     points
 }
 
+// plot points but in parallel
 pub fn mandelbrot_xy_coordinates_with_colours_parallel(
     set: MandelbrotPlane,
 ) -> Vec<((u64, u64), (u8, u8, u8))> {
@@ -48,6 +50,9 @@ pub fn mandelbrot_xy_coordinates_with_colours_parallel(
 
     points
 }
+
+// instead of using a MandelbrotPlane,
+// use simpler parameters which then get converted into a MandelbrotPlane
 pub fn mandelbrot_xy_coords_from_params(
     centre: num::Complex<f64>,
     resolution: f64,
@@ -73,6 +78,7 @@ pub fn mandelbrot_xy_coords_from_params(
     ))
 }
 
+// render with parameters, but in parallel
 pub fn mandelbrot_from_params_parallel(
     centre: num::Complex<f64>,
     resolution: f64,
