@@ -1,7 +1,5 @@
 use num::Complex;
 use rayon::prelude::*;
-use num::complex::ComplexFloat;
-
 // A point on the complex plane
 #[derive(Debug, Copy, Clone)]
 pub struct MandelbrotPoint {

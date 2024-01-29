@@ -1,3 +1,5 @@
+// precomputed table for gradient (i forgor what gradient)
+
 pub const FRACTAL_COLOURS: [(u8, u8, u8); 767] = [
     (0, 7, 101),
     (0, 7, 102),

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 mod backend;
 mod colours;
 mod renderer;
@@ -61,7 +62,8 @@ fn main() -> iced::Result {
 
 #[derive(Debug, Clone)]
 enum Message {
-    PointClicked(Point),
+    LeftClick(Point),
+    RightClick(Point),
     IterationSet(u32),
     Refresh,
     RenderImage,
@@ -85,12 +87,20 @@ impl Sandbox for MandelbrotExplorer {
 
     fn update(&mut self, message: Self::Message) {
         match message {
-            Message::PointClicked(point) => {
+            Message::LeftClick(point) => {
                 self.set.centre += Complex::new(
                     (point.x as f64 - 250.0) * self.set.resolution,
                     (point.y as f64 - 250.0) * self.set.resolution,
                 );
                 self.set.resolution *= 0.5;
+                self.set.cache.clear()
+            }
+            Message::RightClick(point) => {
+                self.set.centre += Complex::new(
+                    (point.x as f64 - 250.0) * self.set.resolution,
+                    (point.y as f64 - 250.0) * self.set.resolution,
+                );
+                self.set.resolution *= 2.0;
                 self.set.cache.clear()
             }
             Message::IterationSet(num) => self.set.max_iterations = num as u64,
@@ -173,7 +183,10 @@ impl canvas::Program<Message> for MandelbrotSet {
             Event::Mouse(mouse_event) => {
                 let message = match mouse_event {
                     iced::mouse::Event::ButtonPressed(iced::mouse::Button::Left) => {
-                        Some(Message::PointClicked(cursor_position))
+                        Some(Message::LeftClick(cursor_position))
+                    }
+                    iced::mouse::Event::ButtonPressed(iced::mouse::Button::Right) => {
+                        Some(Message::RightClick(cursor_position))
                     }
                     _ => None,
                 };
