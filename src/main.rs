@@ -13,57 +13,13 @@ use num::complex::ComplexFloat;
 use num::Complex;
 
 fn main() -> iced::Result {
-    // // let mandelbrot = MandelbrotPlane::new(-1.25, -1.2499, 0.0235, 0.0236, 1000, 1000, 10000);
-    // // let points = renderer::mandelbrot_xy_coordinates_with_colours(mandelbrot);
-    // // let mut image = image::RgbImage::new(mandelbrot.width() as u32, mandelbrot.height() as u32);
-    // // for point in points {
-    // //     image.put_pixel(
-    // //         point.0 .0 as u32,
-    // //         point.0 .1 as u32,
-    // //         image::Rgb(point.1.into()),
-    // //     )
-    // // }
-    //
-    // let points = renderer::mandelbrot_from_params_parallel(
-    //     Complex::new(-0.863527217, 0.238368848),
-    //     0.001 / 4000.0,
-    //     10000,
-    //     1000,
-    //     1000,
-    // );
-    // let mut image = image::RgbImage::new(1000, 1000);
-    // //println!("{points:?}");
-    // for point in points {
-    //     image.put_pixel(
-    //         point.0 .0 as u32,
-    //         point.0 .1 as u32,
-    //         image::Rgb(point.1.into()),
-    //     )
-    // }
-    // // let points = mandelbrot.points_with_colours();
-    // // let mut image = image::RgbImage::new(mandelbrot.width() as u32, mandelbrot.height() as u32);
-    // // //println!("{points:?}");
-    // // for point in points {
-    // //     image.put_pixel(
-    // //         ((point.0.point().re() - mandelbrot.re_min())
-    // //             / ((mandelbrot.re_max() - mandelbrot.re_min()) / (mandelbrot.width() as f64)))
-    // //             .round() as u32,
-    // //         ((point.0.point().im() - mandelbrot.im_min())
-    // //             / ((mandelbrot.im_max() - mandelbrot.im_min()) / (mandelbrot.height() as f64)))
-    // //             .round() as u32,
-    // //         image::Rgb(point.1.into()),
-    // //     );
-    // // }
-    //
-    // image.save("output.png").unwrap();
-    // //println!("{:?}", image.pixels())
     MandelbrotExplorer::run(Settings::default())
 }
 
 #[derive(Debug, Clone)]
 enum Message {
-    LeftClick(Point),
-    RightClick(Point),
+    ZoomIn(Point),
+    ZoomOut(Point),
     IterationSet(u32),
     Refresh,
     RenderImage,
@@ -86,8 +42,10 @@ impl Sandbox for MandelbrotExplorer {
     }
 
     fn update(&mut self, message: Self::Message) {
+        // stops floating point inaccuracies being visible in image, but don't know how much performance impact this has
+        self.set.resolution = self.set.resolution.clamp(2_f64.powi(-53), f64::MAX);
         match message {
-            Message::LeftClick(point) => {
+            Message::ZoomIn(point) => {
                 self.set.centre += Complex::new(
                     (point.x as f64 - 250.0) * self.set.resolution,
                     (point.y as f64 - 250.0) * self.set.resolution,
@@ -95,7 +53,7 @@ impl Sandbox for MandelbrotExplorer {
                 self.set.resolution *= 0.5;
                 self.set.cache.clear()
             }
-            Message::RightClick(point) => {
+            Message::ZoomOut(point) => {
                 self.set.centre += Complex::new(
                     (point.x as f64 - 250.0) * self.set.resolution,
                     (point.y as f64 - 250.0) * self.set.resolution,
@@ -183,11 +141,29 @@ impl canvas::Program<Message> for MandelbrotSet {
             Event::Mouse(mouse_event) => {
                 let message = match mouse_event {
                     iced::mouse::Event::ButtonPressed(iced::mouse::Button::Left) => {
-                        Some(Message::LeftClick(cursor_position))
+                        Some(Message::ZoomIn(cursor_position))
                     }
                     iced::mouse::Event::ButtonPressed(iced::mouse::Button::Right) => {
-                        Some(Message::RightClick(cursor_position))
+                        Some(Message::ZoomOut(cursor_position))
                     }
+                    iced::mouse::Event::WheelScrolled { delta } => match delta {
+                        iced::mouse::ScrollDelta::Lines { x: _, y } => {
+                            if y > 0.0 {
+                                Some(Message::ZoomIn(cursor_position))
+                            } else if y < 0.0 {
+                                Some(Message::ZoomOut(cursor_position))
+                            }
+                            else { None } // don't react to horizontal scrolling (yet)
+                        }
+                        iced::mouse::ScrollDelta::Pixels { x: _, y } => {
+                            if y > 0.0 {
+                                Some(Message::ZoomIn(cursor_position))
+                            } else if y < 0.0 {
+                                Some(Message::ZoomOut(cursor_position))
+                            }
+                            else { None } // don't react to horizontal scrolling (yet)
+                        }
+                    },
                     _ => None,
                 };
                 (Status::Captured, message)
@@ -203,7 +179,7 @@ impl canvas::Program<Message> for MandelbrotSet {
         _theme: &iced::Theme,
         bounds: Rectangle,
         _cursor: Cursor,
-    ) -> Vec<iced::widget::canvas::Geometry> {
+    ) -> Vec<canvas::Geometry> {
         let geom = self.cache.draw(renderer, bounds.size(), |frame| {
             frame.stroke(
                 &canvas::Path::rectangle(Point::ORIGIN, frame.size()),
