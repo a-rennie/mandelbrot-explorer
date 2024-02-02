@@ -12,6 +12,8 @@ use iced::{Element, Length, Point, Rectangle, Sandbox, Settings, Size};
 use num::complex::ComplexFloat;
 use num::Complex;
 
+const CANVAS_SIZE: u16 = 500; // square canvas
+
 fn main() -> iced::Result {
     MandelbrotExplorer::run(Settings::default())
 }
@@ -33,7 +35,7 @@ impl Sandbox for MandelbrotExplorer {
 
     fn new() -> Self {
         Self {
-            set: MandelbrotSet::new(),
+            set: MandelbrotSet::new(CANVAS_SIZE),
         }
     }
 
@@ -47,16 +49,16 @@ impl Sandbox for MandelbrotExplorer {
         match message {
             Message::ZoomIn(point) => {
                 self.set.centre += Complex::new(
-                    (point.x as f64 - 250.0) * self.set.resolution,
-                    (point.y as f64 - 250.0) * self.set.resolution,
+                    (point.x as f64 - (CANVAS_SIZE as f64 / 2.0)) * self.set.resolution,
+                    (point.y as f64 - (CANVAS_SIZE as f64 / 2.0)) * self.set.resolution,
                 );
                 self.set.resolution *= 0.5;
                 self.set.cache.clear()
             }
             Message::ZoomOut(point) => {
                 self.set.centre += Complex::new(
-                    (point.x as f64 - 250.0) * self.set.resolution,
-                    (point.y as f64 - 250.0) * self.set.resolution,
+                    (point.x as f64 - (CANVAS_SIZE as f64 / 2.0)) * self.set.resolution,
+                    (point.y as f64 - (CANVAS_SIZE as f64 / 2.0)) * self.set.resolution,
                 );
                 self.set.resolution *= 2.0;
                 self.set.cache.clear()
@@ -91,7 +93,9 @@ impl Sandbox for MandelbrotExplorer {
 
     fn view(&self) -> Element<'_, Self::Message> {
         column![
-            canvas::Canvas::new(&self.set).width(500).height(500),
+            canvas::Canvas::new(&self.set)
+                .width(CANVAS_SIZE)
+                .height(CANVAS_SIZE),
             row![
                 text(format!("Iterations: {:?}", self.set.max_iterations as u32)),
                 slider(
@@ -129,11 +133,11 @@ struct MandelbrotSet {
 }
 
 impl MandelbrotSet {
-    fn new() -> MandelbrotSet {
+    fn new(size: u16) -> MandelbrotSet {
         MandelbrotSet {
             max_iterations: 1000,
             centre: Complex::new(0.0, 0.0),
-            resolution: 4.0 / 500.0,
+            resolution: 4.0 / size as f64,
             ..Default::default()
         }
     }
