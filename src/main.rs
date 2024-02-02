@@ -64,22 +64,27 @@ impl Sandbox for MandelbrotExplorer {
             Message::IterationSet(num) => self.set.max_iterations = num as u64,
             Message::Refresh => self.set.cache.clear(),
             Message::RenderImage => {
-                let points = mandelbrot_from_params_parallel(
-                    self.set.centre,
-                    self.set.resolution / 8.0,
-                    self.set.max_iterations,
-                    4000,
-                    4000,
-                );
-                let mut image = image::RgbImage::new(4000, 4000);
-                for point in points {
-                    image.put_pixel(
-                        point.0 .0 as u32,
-                        point.0 .1 as u32,
-                        image::Rgb(point.1.into()),
-                    )
-                }
-                let _ = image.save("output.png");
+                let centre = self.set.centre;
+                let resolution = self.set.resolution;
+                let max_iterations = self.set.max_iterations;
+                std::thread::spawn(move || {
+                    let points = mandelbrot_from_params_parallel(
+                        centre,
+                        resolution / 8.0,
+                        max_iterations,
+                        4000,
+                        4000,
+                    );
+                    let mut image = image::RgbImage::new(4000, 4000);
+                    for point in points {
+                        image.put_pixel(
+                            point.0 .0 as u32,
+                            point.0 .1 as u32,
+                            image::Rgb(point.1.into()),
+                        )
+                    }
+                    let _ = image.save("output.png");
+                });
             }
         }
     }
@@ -123,6 +128,17 @@ struct MandelbrotSet {
     cache: canvas::Cache,
 }
 
+impl MandelbrotSet {
+    fn new() -> MandelbrotSet {
+        MandelbrotSet {
+            max_iterations: 1000,
+            centre: Complex::new(0.0, 0.0),
+            resolution: 4.0 / 500.0,
+            ..Default::default()
+        }
+    }
+}
+
 impl canvas::Program<Message> for MandelbrotSet {
     type State = ();
 
@@ -152,16 +168,18 @@ impl canvas::Program<Message> for MandelbrotSet {
                                 Some(Message::ZoomIn(cursor_position))
                             } else if y < 0.0 {
                                 Some(Message::ZoomOut(cursor_position))
-                            }
-                            else { None } // don't react to horizontal scrolling (yet)
+                            } else {
+                                None
+                            } // don't react to horizontal scrolling (yet)
                         }
                         iced::mouse::ScrollDelta::Pixels { x: _, y } => {
                             if y > 0.0 {
                                 Some(Message::ZoomIn(cursor_position))
                             } else if y < 0.0 {
                                 Some(Message::ZoomOut(cursor_position))
-                            }
-                            else { None } // don't react to horizontal scrolling (yet)
+                            } else {
+                                None
+                            } // don't react to horizontal scrolling (yet)
                         }
                     },
                     _ => None,
@@ -212,16 +230,5 @@ impl canvas::Program<Message> for MandelbrotSet {
             }
         });
         vec![geom]
-    }
-}
-
-impl MandelbrotSet {
-    fn new() -> MandelbrotSet {
-        MandelbrotSet {
-            max_iterations: 1000,
-            centre: Complex::new(0.0, 0.0),
-            resolution: 4.0 / 500.0,
-            ..Default::default()
-        }
     }
 }
