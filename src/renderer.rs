@@ -4,8 +4,9 @@ use num::complex::ComplexFloat;
 // plot all points from a MandelbrotPlane to xy coordinates on an image and rgb colouring
 pub fn mandelbrot_xy_coordinates_with_colours(
     set: MandelbrotPlane,
+    colours: &[(u8, u8, u8)],
 ) -> Vec<((u64, u64), (u8, u8, u8))> {
-    let points = set.points_with_colours();
+    let points = set.points_with_colours(colours);
     let points = points
         .iter()
         .map(|point| {
@@ -29,8 +30,9 @@ pub fn mandelbrot_xy_coordinates_with_colours(
 // plot points but in parallel
 pub fn mandelbrot_xy_coordinates_with_colours_parallel(
     set: MandelbrotPlane,
+    colours: &[(u8, u8, u8)],
 ) -> Vec<((u64, u64), (u8, u8, u8))> {
-    let points = set.points_with_colours_parallel();
+    let points = set.points_with_colours_parallel(colours);
     let points = points
         .iter()
         .map(|point| {
@@ -59,6 +61,7 @@ pub fn mandelbrot_xy_coords_from_params(
     max_iterations: u64,
     width: u64,
     height: u64,
+    colours: &[(u8, u8, u8)],
 ) -> Vec<((u64, u64), (u8, u8, u8))> {
     let real_width = width as f64 * resolution;
     let real_height = height as f64 * resolution;
@@ -67,15 +70,18 @@ pub fn mandelbrot_xy_coords_from_params(
     let im_max = centre.im() + real_height / 2.0;
     let im_min = centre.im() - real_height / 2.0;
 
-    mandelbrot_xy_coordinates_with_colours(MandelbrotPlane::new(
-        re_min,
-        re_max,
-        im_min,
-        im_max,
-        width,
-        height,
-        max_iterations,
-    ))
+    mandelbrot_xy_coordinates_with_colours(
+        MandelbrotPlane::new(
+            re_min,
+            re_max,
+            im_min,
+            im_max,
+            width,
+            height,
+            max_iterations,
+        ),
+        colours,
+    )
 }
 
 // render with parameters, but in parallel
@@ -85,6 +91,7 @@ pub fn mandelbrot_from_params_parallel(
     max_iterations: u64,
     width: u64,
     height: u64,
+    colours: &[(u8, u8, u8)],
 ) -> Vec<((u64, u64), (u8, u8, u8))> {
     let real_width = width as f64 * resolution;
     let real_height = height as f64 * resolution;
@@ -93,13 +100,16 @@ pub fn mandelbrot_from_params_parallel(
     let im_max = centre.im() + real_height / 2.0;
     let im_min = centre.im() - real_height / 2.0;
 
-    mandelbrot_xy_coordinates_with_colours_parallel(MandelbrotPlane::new(
-        re_min,
-        re_max,
-        im_min,
-        im_max,
-        width,
-        height,
-        max_iterations,
-    ))
+    mandelbrot_xy_coordinates_with_colours_parallel(
+        MandelbrotPlane::new(
+            re_min,
+            re_max,
+            im_min,
+            im_max,
+            width,
+            height,
+            max_iterations,
+        ),
+        colours,
+    )
 }

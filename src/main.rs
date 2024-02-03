@@ -3,14 +3,16 @@ mod backend;
 mod colours;
 mod renderer;
 
+use crate::colours::*;
 use crate::renderer::mandelbrot_from_params_parallel;
 use iced::event::Status;
 use iced::mouse::Cursor;
 use iced::widget::canvas::Event;
-use iced::widget::{button, canvas, column, row, slider, text};
+use iced::widget::{button, canvas, column, pick_list, row, slider, text};
 use iced::{Element, Length, Point, Rectangle, Sandbox, Settings, Size};
 use num::complex::ComplexFloat;
 use num::Complex;
+use std::fmt::Formatter;
 
 const CANVAS_SIZE: u16 = 500; // square canvas
 
@@ -25,6 +27,33 @@ enum Message {
     IterationSet(u32),
     Refresh,
     RenderImage,
+    ColourSelected(Colour),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Colour {
+    Default,
+    Rainbow,
+}
+impl Colour {
+    fn to_array(self) -> &'static [(u8, u8, u8)] {
+        match self {
+            Colour::Default => &DEFAULT_COLOURS,
+            Colour::Rainbow => &RAINBOW_COLOURS,
+        }
+    }
+}
+impl std::fmt::Display for Colour {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Colour::Default => "Default",
+                Colour::Rainbow => "Rainbow",
+            }
+        )
+    }
 }
 struct MandelbrotExplorer {
     set: MandelbrotSet,
@@ -69,6 +98,7 @@ impl Sandbox for MandelbrotExplorer {
                 let centre = self.set.centre;
                 let resolution = self.set.resolution;
                 let max_iterations = self.set.max_iterations;
+                let colour = self.set.colour.unwrap_or(Colour::Default).to_array();
                 std::thread::spawn(move || {
                     let points = mandelbrot_from_params_parallel(
                         centre,
@@ -76,6 +106,7 @@ impl Sandbox for MandelbrotExplorer {
                         max_iterations,
                         4000,
                         4000,
+                        colour,
                     );
                     let mut image = image::RgbImage::new(4000, 4000);
                     for point in points {
@@ -87,6 +118,10 @@ impl Sandbox for MandelbrotExplorer {
                     }
                     let _ = image.save("output.png");
                 });
+            }
+            Message::ColourSelected(colour) => {
+                self.set.colour = Some(colour);
+                self.set.cache.clear()
             }
         }
     }
@@ -115,7 +150,12 @@ impl Sandbox for MandelbrotExplorer {
             )),
             row![
                 button(text("Refresh Image")).on_press(Message::Refresh),
-                button(text("Render 4000x4000 image")).on_press(Message::RenderImage)
+                button(text("Render 4000x4000 image")).on_press(Message::RenderImage),
+                pick_list(
+                    &[Colour::Default, Colour::Rainbow][..],
+                    self.set.colour,
+                    Message::ColourSelected
+                )
             ]
         ]
         .width(Length::Fill)
@@ -129,6 +169,7 @@ struct MandelbrotSet {
     max_iterations: u64,
     centre: Complex<f64>,
     resolution: f64,
+    colour: Option<Colour>,
     cache: canvas::Cache,
 }
 
@@ -138,6 +179,7 @@ impl MandelbrotSet {
             max_iterations: 1000,
             centre: Complex::new(0.0, 0.0),
             resolution: 4.0 / size as f64,
+            colour: Some(Colour::Default),
             ..Default::default()
         }
     }
@@ -213,6 +255,7 @@ impl canvas::Program<Message> for MandelbrotSet {
                 self.max_iterations,
                 frame.width().round() as u64,
                 frame.height().round() as u64,
+                &self.colour.unwrap_or(Colour::Default).to_array(),
             );
             for point in points {
                 let path = canvas::Path::rectangle(

@@ -131,22 +131,24 @@ impl MandelbrotPlane {
 
     // Instead of returning points with iterations,
     // this returns the colour for each point as an rgb tuple from a precomputed colour palette
-    pub fn points_with_colours(self) -> Vec<(MandelbrotPoint, (u8, u8, u8))> {
+    pub fn points_with_colours(
+        self,
+        colours: &[(u8, u8, u8)],
+    ) -> Vec<(MandelbrotPoint, (u8, u8, u8))> {
         self.points_with_iterations()
             .iter()
             .map(|point| {
                 let i = point.1;
                 let point_coord = point.0.point;
                 let smoothed = point_coord.norm().log2();
-                let colour_i: usize = ((i as f64 + 10.0 - smoothed).sqrt() * 256.0).round()
-                    as usize
-                    % crate::colours::FRACTAL_COLOURS.len();
+                let colour_i: usize =
+                    ((i as f64 + 10.0 - smoothed).sqrt() * 256.0).round() as usize % colours.len();
                 (
                     point.0,
                     if self.max_iterations == i {
                         (0, 0, 0)
                     } else {
-                        crate::colours::FRACTAL_COLOURS[colour_i]
+                        colours[colour_i]
                     },
                 )
             })
@@ -154,22 +156,24 @@ impl MandelbrotPlane {
     }
 
     // same but in parallel
-    pub fn points_with_colours_parallel(self) -> Vec<(MandelbrotPoint, (u8, u8, u8))> {
+    pub fn points_with_colours_parallel(
+        self,
+        colours: &[(u8, u8, u8)],
+    ) -> Vec<(MandelbrotPoint, (u8, u8, u8))> {
         self.points_with_iterations_parallel()
             .par_iter()
             .map(|point| {
                 let i = point.1;
                 let point_coord = point.0.point;
                 let smoothed = point_coord.norm().log2();
-                let colour_i: usize = ((i as f64 + 10.0 - smoothed).sqrt() * 255.0).round()
-                    as usize
-                    % crate::colours::FRACTAL_COLOURS.len();
+                let colour_i: usize =
+                    ((i as f64 + 10.0 - smoothed).sqrt() * 255.0).round() as usize % colours.len();
                 (
                     point.0,
                     if self.max_iterations == i {
                         (0, 0, 0)
                     } else {
-                        crate::colours::FRACTAL_COLOURS[colour_i]
+                        colours[colour_i]
                     },
                 )
             })
