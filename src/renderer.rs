@@ -1,11 +1,13 @@
 use crate::backend::MandelbrotPlane;
 use num::complex::ComplexFloat;
 
+type RawMandelbrotColours = Vec<((u64, u64), (u8, u8, u8))>;
+
 // plot all points from a MandelbrotPlane to xy coordinates on an image and rgb colouring
 pub fn mandelbrot_xy_coordinates_with_colours(
     set: MandelbrotPlane,
     colours: &[(u8, u8, u8)],
-) -> Vec<((u64, u64), (u8, u8, u8))> {
+) -> RawMandelbrotColours {
     let points = set.points_with_colours(colours);
     let points = points
         .iter()
@@ -31,7 +33,7 @@ pub fn mandelbrot_xy_coordinates_with_colours(
 pub fn mandelbrot_xy_coordinates_with_colours_parallel(
     set: MandelbrotPlane,
     colours: &[(u8, u8, u8)],
-) -> Vec<((u64, u64), (u8, u8, u8))> {
+) -> RawMandelbrotColours {
     let points = set.points_with_colours_parallel(colours);
     let points = points
         .iter()
@@ -62,7 +64,7 @@ pub fn mandelbrot_xy_coords_from_params(
     width: u64,
     height: u64,
     colours: &[(u8, u8, u8)],
-) -> Vec<((u64, u64), (u8, u8, u8))> {
+) -> RawMandelbrotColours {
     let real_width = width as f64 * resolution;
     let real_height = height as f64 * resolution;
     let re_max = centre.re() + real_width / 2.0;
@@ -92,7 +94,7 @@ pub fn mandelbrot_from_params_parallel(
     width: u64,
     height: u64,
     colours: &[(u8, u8, u8)],
-) -> Vec<((u64, u64), (u8, u8, u8))> {
+) -> RawMandelbrotColours {
     let real_width = width as f64 * resolution;
     let real_height = height as f64 * resolution;
     let re_max = centre.re() + real_width / 2.0;

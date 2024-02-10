@@ -34,12 +34,14 @@ enum Message {
 enum Colour {
     Default,
     Rainbow,
+    GreenBlack,
 }
 impl Colour {
     fn to_array(self) -> &'static [(u8, u8, u8)] {
         match self {
             Colour::Default => &DEFAULT_COLOURS,
             Colour::Rainbow => &RAINBOW_COLOURS,
+            Colour::GreenBlack => &GREEN_AND_BLACK,
         }
     }
 }
@@ -51,6 +53,7 @@ impl std::fmt::Display for Colour {
             match self {
                 Colour::Default => "Default",
                 Colour::Rainbow => "Rainbow",
+                Colour::GreenBlack => "Green and Black",
             }
         )
     }
@@ -152,7 +155,7 @@ impl Sandbox for MandelbrotExplorer {
                 button(text("Refresh Image")).on_press(Message::Refresh),
                 button(text("Render 4000x4000 image")).on_press(Message::RenderImage),
                 pick_list(
-                    &[Colour::Default, Colour::Rainbow][..],
+                    &[Colour::Default, Colour::Rainbow, Colour::GreenBlack][..],
                     self.set.colour,
                     Message::ColourSelected
                 )
@@ -255,7 +258,7 @@ impl canvas::Program<Message> for MandelbrotSet {
                 self.max_iterations,
                 frame.width().round() as u64,
                 frame.height().round() as u64,
-                &self.colour.unwrap_or(Colour::Default).to_array(),
+                self.colour.unwrap_or(Colour::Default).to_array(),
             );
             for point in points {
                 let path = canvas::Path::rectangle(
