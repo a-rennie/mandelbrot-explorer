@@ -9,24 +9,22 @@ pub fn mandelbrot_xy_coordinates_with_colours(
     colours: &[(u8, u8, u8)],
 ) -> RawMandelbrotColours {
     let points = set.points_with_colours(colours);
-    let points = points
-        .iter()
-        .map(|point| {
+    points
+        .into_iter()
+        .map(|(point, colour)| {
             (
                 (
-                    ((point.0.point().re() - set.re_min())
+                    ((point.point().re() - set.re_min())
                         / ((set.re_max() - set.re_min()) / (set.width() as f64)))
                         .round() as u64,
-                    ((point.0.point().im() - set.im_min())
+                    ((point.point().im() - set.im_min())
                         / ((set.im_max() - set.im_min()) / (set.height() as f64)))
                         .round() as u64,
                 ),
-                point.1,
+                colour,
             )
         })
-        .collect();
-
-    points
+        .collect()
 }
 
 // plot points but in parallel
@@ -35,24 +33,22 @@ pub fn mandelbrot_xy_coordinates_with_colours_parallel(
     colours: &[(u8, u8, u8)],
 ) -> RawMandelbrotColours {
     let points = set.points_with_colours_parallel(colours);
-    let points = points
-        .iter()
-        .map(|point| {
+    points
+        .into_iter()
+        .map(|(point, colour)| {
             (
                 (
-                    ((point.0.point().re() - set.re_min())
+                    ((point.point().re() - set.re_min())
                         / ((set.re_max() - set.re_min()) / (set.width() as f64)))
                         .round() as u64,
-                    ((point.0.point().im() - set.im_min())
+                    ((point.point().im() - set.im_min())
                         / ((set.im_max() - set.im_min()) / (set.height() as f64)))
                         .round() as u64,
                 ),
-                point.1,
+                colour,
             )
         })
-        .collect();
-
-    points
+        .collect()
 }
 
 // instead of using a MandelbrotPlane,

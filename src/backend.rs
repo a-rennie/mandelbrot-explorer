@@ -136,15 +136,15 @@ impl MandelbrotPlane {
         colours: &[(u8, u8, u8)],
     ) -> Vec<(MandelbrotPoint, (u8, u8, u8))> {
         self.points_with_iterations()
-            .iter()
-            .map(|point| {
-                let i = point.1;
-                let point_coord = point.0.point;
+            .into_iter()
+            .map(|(point, iterations)| {
+                let i = iterations;
+                let point_coord = point.point;
                 let smoothed = point_coord.norm().log2();
                 let colour_i: usize =
                     ((i as f64 + 10.0 - smoothed).sqrt() * 256.0).round() as usize % colours.len();
                 (
-                    point.0,
+                    point,
                     if self.max_iterations == i {
                         (0, 0, 0)
                     } else {
@@ -161,15 +161,15 @@ impl MandelbrotPlane {
         colours: &[(u8, u8, u8)],
     ) -> Vec<(MandelbrotPoint, (u8, u8, u8))> {
         self.points_with_iterations_parallel()
-            .par_iter()
-            .map(|point| {
-                let i = point.1;
-                let point_coord = point.0.point;
+            .into_par_iter()
+            .map(|(point, iterations)| {
+                let i = iterations;
+                let point_coord = point.point;
                 let smoothed = point_coord.norm().log2();
                 let colour_i: usize =
                     ((i as f64 + 10.0 - smoothed).sqrt() * 255.0).round() as usize % colours.len();
                 (
-                    point.0,
+                    point,
                     if self.max_iterations == i {
                         (0, 0, 0)
                     } else {
