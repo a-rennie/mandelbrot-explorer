@@ -190,7 +190,6 @@ impl MandelbrotPlane {
     pub fn points_with_iterations_simd_parallel(self) -> Vec<(MandelbrotPoint, u64)> {
         let mut re_points = Vec::new();
         let mut im_points = Vec::new();
-        let points_out: Arc<Mutex<Vec<(MandelbrotPoint, u64)>>> = Arc::new(Mutex::new(Vec::new()));
         let mut point;
         // create list of all points in bounds specified
         for real in 0..self.width {
@@ -207,65 +206,68 @@ impl MandelbrotPlane {
         }
         let queue = Arc::new(Mutex::new(std::iter::zip(re_points, im_points)));
 
-        (0..10).into_par_iter().for_each(|_| {
-            let mut re_simd = f64x8::splat(0.0);
-            let mut im_simd = f64x8::splat(0.0);
-            let mut z_re = f64x8::splat(0.0);
-            let mut z_im = f64x8::splat(0.0);
-            let mut mask = mask64x8::splat(false);
-            let mut iterations = u64x8::splat(0);
-            //let mut index = f64x64::from_slice(&(0..64).map(|x| x as f64).collect::<Vec<_>>()[..]);
-            'outer: loop {
-                let mask_indexable = mask.to_array();
-                for i in 0usize..8 {
-                    // let next = queue.next();
-                    // if next.is_none() && !mask.any() {
-                    //     break 'outer;
-                    // }
-                    if !mask_indexable[i] {
-                        let next = queue.lock().unwrap().next();
-                        match next {
-                            Some(item) => {
-                                re_simd[i] = item.0;
-                                im_simd[i] = item.1;
-                                iterations[i] = 0;
-                                mask.set(i, true);
-                                z_re[i] = 0.0;
-                                z_im[i] = 0.0;
-                            }
-                            None => {
-                                if !(mask.any()) {
-                                    break 'outer;
+        (0..10)
+            .into_par_iter()
+            .flat_map(|_| {
+                let mut points_out: Vec<(MandelbrotPoint, u64)> = Vec::new();
+                let mut re_simd = f64x8::splat(0.0);
+                let mut im_simd = f64x8::splat(0.0);
+                let mut z_re = f64x8::splat(0.0);
+                let mut z_im = f64x8::splat(0.0);
+                let mut mask = mask64x8::splat(false);
+                let mut iterations = u64x8::splat(0);
+                //let mut index = f64x64::from_slice(&(0..64).map(|x| x as f64).collect::<Vec<_>>()[..]);
+                'outer: loop {
+                    let mask_indexable = mask.to_array();
+                    for i in 0usize..8 {
+                        // let next = queue.next();
+                        // if next.is_none() && !mask.any() {
+                        //     break 'outer;
+                        // }
+                        if !mask_indexable[i] {
+                            let next = queue.lock().unwrap().next();
+                            match next {
+                                Some(item) => {
+                                    re_simd[i] = item.0;
+                                    im_simd[i] = item.1;
+                                    iterations[i] = 0;
+                                    mask.set(i, true);
+                                    z_re[i] = 0.0;
+                                    z_im[i] = 0.0;
+                                }
+                                None => {
+                                    if !(mask.any()) {
+                                        break 'outer;
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                for _ in 0..50 {
-                    (z_re, z_im) = (
-                        mask.select(((z_re * z_re) - (z_im * z_im)) + re_simd, z_re),
-                        mask.select((f64x8::splat(2.0) * (z_re * z_im)) + im_simd, z_im),
-                    );
-                    mask = ((z_re * z_re) + (z_im * z_im)).simd_le(f64x8::splat(4.0));
-                    iterations = mask.select(iterations + u64x8::splat(1), iterations);
-                    if !(mask.any()) {
-                        break;
+                    for _ in 0..50 {
+                        (z_re, z_im) = (
+                            mask.select(((z_re * z_re) - (z_im * z_im)) + re_simd, z_re),
+                            mask.select((f64x8::splat(2.0) * (z_re * z_im)) + im_simd, z_im),
+                        );
+                        mask = ((z_re * z_re) + (z_im * z_im)).simd_le(f64x8::splat(4.0));
+                        iterations = mask.select(iterations + u64x8::splat(1), iterations);
+                        if !(mask.any()) {
+                            break;
+                        }
+                    }
+                    mask &= iterations.simd_lt(u64x8::splat(self.max_iterations));
+                    let mask_indexable = mask.to_array();
+                    for i in 0usize..8 {
+                        if !mask_indexable[i] {
+                            points_out.push((
+                                MandelbrotPoint::new(Complex::new(re_simd[i], im_simd[i])),
+                                iterations[i],
+                            ));
+                        }
                     }
                 }
-                mask &= iterations.simd_lt(u64x8::splat(self.max_iterations));
-                let mask_indexable = mask.to_array();
-                for i in 0usize..8 {
-                    if !mask_indexable[i] {
-                        points_out.lock().unwrap().push((
-                            MandelbrotPoint::new(Complex::new(re_simd[i], im_simd[i])),
-                            iterations[i],
-                        ));
-                    }
-                }
-            }
-        });
-        let x = points_out.lock().unwrap().clone();
-        x
+                points_out
+            })
+            .collect::<Vec<(MandelbrotPoint, u64)>>()
     }
 
     // same, but in parallel :o
