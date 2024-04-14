@@ -215,4 +215,3 @@ pub fn mandelbrot_from_params_simd_parallel(
         colours,
     )
 }
-

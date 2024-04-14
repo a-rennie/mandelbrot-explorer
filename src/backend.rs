@@ -163,7 +163,10 @@ impl MandelbrotPlane {
                 }
             }
             for _ in 0..50 {
-                (z_re, z_im) = (mask.select(((z_re * z_re) - (z_im * z_im)) + re_simd, z_re), mask.select((f64x8::splat(2.0) * (z_re * z_im)) + im_simd, z_im));
+                (z_re, z_im) = (
+                    mask.select(((z_re * z_re) - (z_im * z_im)) + re_simd, z_re),
+                    mask.select((f64x8::splat(2.0) * (z_re * z_im)) + im_simd, z_im),
+                );
                 mask = ((z_re * z_re) + (z_im * z_im)).simd_le(f64x8::splat(4.0));
                 iterations = mask.select(iterations + u64x8::splat(1), iterations);
                 if !(mask.any()) {
@@ -205,7 +208,6 @@ impl MandelbrotPlane {
         let queue = Arc::new(Mutex::new(std::iter::zip(re_points, im_points)));
 
         (0..10).into_par_iter().for_each(|_| {
-
             let mut re_simd = f64x8::splat(0.0);
             let mut im_simd = f64x8::splat(0.0);
             let mut z_re = f64x8::splat(0.0);
@@ -240,7 +242,10 @@ impl MandelbrotPlane {
                     }
                 }
                 for _ in 0..50 {
-                    (z_re, z_im) = (mask.select(((z_re * z_re) - (z_im * z_im)) + re_simd, z_re), mask.select((f64x8::splat(2.0) * (z_re * z_im)) + im_simd, z_im));
+                    (z_re, z_im) = (
+                        mask.select(((z_re * z_re) - (z_im * z_im)) + re_simd, z_re),
+                        mask.select((f64x8::splat(2.0) * (z_re * z_im)) + im_simd, z_im),
+                    );
                     mask = ((z_re * z_re) + (z_im * z_im)).simd_le(f64x8::splat(4.0));
                     iterations = mask.select(iterations + u64x8::splat(1), iterations);
                     if !(mask.any()) {
@@ -257,8 +262,10 @@ impl MandelbrotPlane {
                         ));
                     }
                 }
-            }});
-        let x = points_out.lock().unwrap().clone(); x
+            }
+        });
+        let x = points_out.lock().unwrap().clone();
+        x
     }
 
     // same, but in parallel :o
@@ -356,7 +363,6 @@ impl MandelbrotPlane {
                 )
             })
             .collect()
-
     }
     pub fn points_with_colours_simd_parallel(
         self,

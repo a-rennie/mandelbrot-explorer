@@ -6,7 +6,10 @@ mod colours;
 mod renderer;
 
 use crate::colours::*;
-use crate::renderer::{mandelbrot_from_params_simd_parallel, mandelbrot_xy_coords_colours_simd_parallel, mandelbrot_xy_coords_from_params_simd};
+use crate::renderer::{
+    mandelbrot_from_params_simd_parallel, mandelbrot_xy_coords_colours_simd_parallel,
+    mandelbrot_xy_coords_from_params_simd,
+};
 use iced::event::Status;
 use iced::mouse::Cursor;
 use iced::widget::canvas::Event;
@@ -105,6 +108,17 @@ impl Sandbox for MandelbrotExplorer {
                 let max_iterations = self.set.max_iterations;
                 let colour = self.set.colour.unwrap_or(Colour::Default).to_array();
                 std::thread::spawn(move || {
+                    println!(
+                        "{:?}",
+                        (
+                            centre,
+                            resolution / 8.0,
+                            max_iterations,
+                            4000,
+                            4000,
+                            "colour",
+                        )
+                    );
                     let points = mandelbrot_from_params_simd_parallel(
                         centre,
                         resolution / 8.0,
