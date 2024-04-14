@@ -1,10 +1,12 @@
 #![allow(dead_code)]
+#![feature(portable_simd)]
+
 mod backend;
 mod colours;
 mod renderer;
 
 use crate::colours::*;
-use crate::renderer::mandelbrot_from_params_parallel;
+use crate::renderer::{mandelbrot_from_params_simd_parallel, mandelbrot_xy_coords_colours_simd_parallel, mandelbrot_xy_coords_from_params_simd};
 use iced::event::Status;
 use iced::mouse::Cursor;
 use iced::widget::canvas::Event;
@@ -14,7 +16,7 @@ use num::complex::ComplexFloat;
 use num::Complex;
 use std::fmt::Formatter;
 
-const CANVAS_SIZE: u16 = 500; // square canvas
+const CANVAS_SIZE: u16 = 512; // square canvas
 
 fn main() -> iced::Result {
     MandelbrotExplorer::run(Settings::default())
@@ -103,7 +105,7 @@ impl Sandbox for MandelbrotExplorer {
                 let max_iterations = self.set.max_iterations;
                 let colour = self.set.colour.unwrap_or(Colour::Default).to_array();
                 std::thread::spawn(move || {
-                    let points = mandelbrot_from_params_parallel(
+                    let points = mandelbrot_from_params_simd_parallel(
                         centre,
                         resolution / 8.0,
                         max_iterations,
@@ -252,7 +254,7 @@ impl canvas::Program<Message> for MandelbrotSet {
                 &canvas::Path::rectangle(Point::ORIGIN, frame.size()),
                 canvas::Stroke::default(),
             );
-            let points = mandelbrot_from_params_parallel(
+            let points = mandelbrot_from_params_simd_parallel(
                 self.centre,
                 self.resolution,
                 self.max_iterations,
