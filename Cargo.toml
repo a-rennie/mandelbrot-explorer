@@ -9,5 +9,5 @@ edition = "2021"
 colorsys = "0.6.7"
 iced = { version = "0.12.1", features = ["canvas"] }
 image = "0.25.1"
-num = "0.4.1"
+num = "0.4.2"
 rayon = "1.10.0"
